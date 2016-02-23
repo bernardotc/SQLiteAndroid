@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
+import java.util.List;
 import java.util.Random;
 
 public class SQLiteActivity extends Activity {
@@ -73,7 +74,8 @@ public class SQLiteActivity extends Activity {
             public void onClick(View view) {
                 try {
                     SQLiteDatabase db = scoreHelper.getWritableDatabase();
-                    scoreHelper.addEntry(db, "Simon", "" + 10 * (1 + random.nextInt(100)));
+                    SQLiteDB sqlDB = new SQLiteDB(db);
+                    sqlDB.addScore(new Score(System.currentTimeMillis(), "Simon", 10 * (1 + random.nextInt(100))));
                     Log.i(TAG, "Populated Table");
                     db.close();
                 } catch (Exception e) {
@@ -83,29 +85,35 @@ public class SQLiteActivity extends Activity {
         });
         lin.addView(addEntryButton);
 
-        Button queryButton = new Button(this);
-        queryButton.setText("Query");
-        queryButton.setOnClickListener(new View.OnClickListener() {
+        Button HSqueryButton = new Button(this);
+        HSqueryButton.setText("High Score Query");
+        HSqueryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 try {
                     SQLiteDatabase db = scoreHelper.getWritableDatabase();
-                    try{
-                        Cursor cursor = db.rawQuery("Select * from " + ScoreDBContract.ScoreEntry.TABLE_NAME,
-                                new String[]{});
-                        cursor.moveToFirst();
-                        int scoreIndex = cursor.getColumnIndex(ScoreDBContract.ScoreEntry.COLUMN_NAME_SCORE);
-                        Log.i(TAG, "Score column index = " + scoreIndex);
-                        while (!cursor.isAfterLast()) {
-                            // String row = cursor.toString();
-                            // note
-                            // String score = cursor.getString(scoreIndex);
-                            int score = cursor.getInt(scoreIndex);
-                            boolean flag = cursor.moveToNext();
-                            Log.i(TAG, flag + " : " + score);
-                        }
-                    }   catch(Exception e) {
-                        Log.e(TAG, e.toString());
+                    SQLiteDB sqlDB = new SQLiteDB(db);
+                    Score highScore = sqlDB.highScore();
+                    System.out.println(highScore.person + " / " + highScore.score);
+                    db.close();
+                } catch (Exception e) {
+                    Log.e(TAG, e.toString());
+                }
+            }
+        });
+        lin.addView(HSqueryButton);
+
+        Button TOPqueryButton = new Button(this);
+        TOPqueryButton.setText("Top 5 Query");
+        TOPqueryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    SQLiteDatabase db = scoreHelper.getWritableDatabase();
+                    SQLiteDB sqlDB = new SQLiteDB(db);
+                    List<Score> top = sqlDB.topN(5);
+                    for (int x = 0; x < top.size(); x++) {
+                        System.out.println(top.get(x).person + " / " + top.get(x).score);
                     }
                     db.close();
                 } catch (Exception e) {
@@ -113,7 +121,7 @@ public class SQLiteActivity extends Activity {
                 }
             }
         });
-        lin.addView(queryButton);
+        lin.addView(TOPqueryButton);
 
     }
 
